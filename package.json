@@ -1,6 +1,6 @@
 {
     "name": "skillfs",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "De-duplicate and centralize agent skills across directories",
     "type": "module",
     "main": "dist/index.js",
