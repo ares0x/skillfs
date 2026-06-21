@@ -9,6 +9,8 @@ export interface RuntimeScanStatus {
   path: string;
   exists: boolean;
   skills: Skill[];
+  /** If scanning failed, this contains the error message. */
+  error?: string;
 }
 
 export interface ScanResult {
@@ -46,8 +48,10 @@ function scanDirectory(dirPath: string, runtimeName: string): RuntimeScanStatus 
         }
       }
     }
-  } catch (err) {
-    // If we fail to scan, we just leave exists as false
+  } catch (err: unknown) {
+    status.exists = false;
+    status.error = err instanceof Error ? err.message : String(err);
+    console.warn(`Warning: Failed to scan ${resolvedPath}: ${status.error}`);
   }
 
   return status;

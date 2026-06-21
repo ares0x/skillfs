@@ -168,18 +168,23 @@ export function analyzeRuntimes(): DoctorAnalysis {
 export function serializeAnalysisToJson(analysis: DoctorAnalysis): object {
   const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes, driftedSkills } = analysis;
 
-  const runtimes = scanResult.runtimes.map(r => ({
-    name: r.name,
-    path: formatPath(r.path),
-    exists: r.exists,
-    skillCount: r.skills.length,
-  }));
+  const runtimes = scanResult.runtimes.map(r => {
+    const entry: Record<string, unknown> = {
+      name: r.name,
+      path: formatPath(r.path),
+      exists: r.exists,
+      skillCount: r.skills.length,
+    };
+    if (r.error) entry.error = r.error;
+    return entry;
+  });
 
-  const central = {
+  const central: Record<string, unknown> = {
     exists: scanResult.central.exists,
     skillCount: scanResult.central.skills.length,
     path: formatPath(scanResult.central.path),
   };
+  if (scanResult.central.error) central.error = scanResult.central.error;
 
   const dupesJson = duplicates.map(d => ({
     name: d.name,
@@ -263,7 +268,9 @@ export function runDoctor(options: DoctorOptions = {}): void {
   console.log('Scanned directories:');
   for (const runtime of scanResult.runtimes) {
     const formatted = formatPath(runtime.path);
-    if (runtime.exists) {
+    if (runtime.error) {
+      display.warn(`${formatted} (scan failed: ${runtime.error})`);
+    } else if (runtime.exists) {
       display.success(`${formatted}${' '.repeat(Math.max(2, 24 - formatted.length))}(${runtime.skills.length} skills)`);
     } else {
       display.warn(`${formatted} (directory not enabled)`);
@@ -271,7 +278,9 @@ export function runDoctor(options: DoctorOptions = {}): void {
   }
 
   const centralFormatted = formatPath(scanResult.central.path);
-  if (scanResult.central.exists) {
+  if (scanResult.central.error) {
+    display.warn(`${centralFormatted} (scan failed: ${scanResult.central.error})`);
+  } else if (scanResult.central.exists) {
     display.success(`${centralFormatted}${' '.repeat(Math.max(2, 24 - centralFormatted.length))}(${scanResult.central.skills.length} skills)`);
   } else {
     display.warn(`${centralFormatted} (does not exist, will be created on dedupe)`);
