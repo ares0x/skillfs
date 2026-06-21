@@ -179,7 +179,9 @@ sk --version    # 打印版本号 (1.0.0)
 
 ### `sk doctor`
 
-扫描所有运行时，发现重复 skill，估算可节省空间。
+**自动发现你机器上所有 AI agent**，然后扫描重复 skill：
+
+- 扫描 `~/.*/skills/`——连你忘掉装过的 agent 都能发现
 
 ```bash
 sk doctor
@@ -342,7 +344,7 @@ node dist/index.js list
 }
 ```
 
-**默认覆盖 13 个主流 agent：** Claude Code、VS Code / Copilot (`~/.agents/`)、Clawdbot、Cursor、Codex、Gemini CLI、Windsurf、Cline、Continue、Aider、Augment、Roo Code、OpenCode。未安装的运行时会显示为"未启用"——不会报错，没有副作用。
+**自动发现，零配置。** SkillFS 自动扫描 `~/.*/skills/`，任何包含有效 `SKILL.md` 的目录都会被识别。安装新 agent 后 `sk doctor` 立刻就能看到，无需手动配置任何东西。使用 `~/.skills/config.json` 排除不需要的目录。
 
 ---
 
@@ -377,9 +379,9 @@ src/
 
 - 同时使用**多个 AI 编程 agent** 的重度用户
 - 需要**共享、版本化管理** skill 目录的团队
-- **受够了**"我上次到底改的是哪份拷贝？"的人
+- 跑了一次 `ls ~/.*/skills` 被数量吓到的人
 
-如果你只用一个 agent——大概率不需要这个工具。但如果你用三个 agent、有 12 份重复的 skill 目录——它能帮你从自己手里拯救出来。
+SkillFS 自动发现你机器上每一个 agent——你不需要记得装过哪些。`sk doctor` 会告诉你。
 
 ---
 

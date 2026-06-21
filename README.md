@@ -60,8 +60,9 @@ sk list            Visual tree of every skill and its link status
 
 ### `sk doctor`
 
-Scans all configured runtimes, groups skills by name, and reports:
+**Auto-discovers every AI agent on your machine**, then scans for duplicates:
 
+- Scans `~/.*/skills/` — finds agents you forgot you even installed
 - **Identical duplicates** (same MD5 hash) — safe to auto-migrate
 - **Conflicting versions** (different content, same name) — needs your decision
 - **Disk space savings** — how much you'll reclaim
@@ -179,13 +180,13 @@ sk --version    # Print version number (1.0.0)
 
 ### `sk doctor`
 
-Scan all runtimes, discover duplicates, estimate savings.
+Auto-discover agents and scan for duplicates, estimate savings.
 
 ```bash
 sk doctor
 ```
 
-No options. Run it anytime — it's read-only, zero side effects.
+No options. Run it anytime — it's read-only, zero side effects. Automatically finds any `~/.{name}/skills/` directory with valid `SKILL.md` files.
 
 ### `sk dedupe`
 
@@ -342,7 +343,9 @@ Got an agent that isn't in the defaults? Add it to `~/.skills/config.json`:
 }
 ```
 
-**13 agents are covered out of the box:** Claude Code, VS Code / Copilot (`~/.agents/`), Clawdbot, Cursor, Codex, Gemini CLI, Windsurf, Cline, Continue, Aider, Augment, Roo Code, and OpenCode. Missing runtimes show up as inactive in `sk doctor` — no errors, no side effects.
+**Auto-discovery — zero config.** SkillFS scans `~/.*/skills/` for any directory with valid `SKILL.md` files. Install a new agent and `sk doctor` sees it immediately. No manual config, no hardcoded list to maintain. Use `~/.skills/config.json` to exclude specific directories.
+
+If you only use one agent — you probably don't need this. If you have 27 and didn't even remember half of them, this changes everything.
 
 ---
 
@@ -377,9 +380,9 @@ The central directory `~/.skills/` becomes the single source of truth. Runtimes 
 
 - **AI agent power users** running multiple coding agents simultaneously
 - **Teams** that want shared, version-controlled skill directories
-- **Anyone** who's tired of "which copy of this skill did I update last?"
+- **Anyone** who ran `ls ~/.*/skills` and was surprised by the number
 
-If you only use one agent — you probably don't need this. If you use three and have 12 duplicate skill directories, this saves you from yourself.
+SkillFS auto-discovers every agent on your machine — you don't need to remember which ones you installed. `sk doctor` tells you.
 
 ---
 
