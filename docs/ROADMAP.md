@@ -56,6 +56,13 @@
 sk doctor --fix --json | jq '.unresolved'
 ```
 
+**Exit Code 规范：**
+| Exit | 含义 |
+|------|------|
+| `0` | 成功，无重复或全部自动修复 |
+| `1` | 意外执行错误 |
+| `2` | 存在未解决的版本冲突（需人工交互） |
+
 **工作量：** 小（dedupe.ts 加一个 nonInteractive 模式）
 
 ### v1.5 — `sk backup / sk restore`
@@ -106,7 +113,9 @@ sk install ./my-skill.skill                     # 从 .skill 归档安装
 
 不建 marketplace，不建 registry。就用 GitHub 和本地文件——最简路径。
 
-**工作量：** 中（需要 git clone + 解压逻辑）
+**⚠ 注意：** `sk install <url>` 从 Git 仓库 clone 后需删除目标目录的 `.git/`，否则后续 `sk backup` 会将 skill 目录识别为 Git Submodule 而非正常文件，导致备份丢失 skill 内容。
+
+**工作量：** 中（需要 git clone + 解压逻辑 + `.git/` 清理）
 
 ---
 
@@ -118,7 +127,7 @@ sk install ./my-skill.skill                     # 从 .skill 归档安装
 | `sk share <name>` | 把 skill 打包推送到 GitHub Gist | 低 |
 | `sk init --from <remote>` | 在新机器上从 git remote 一键恢复所有 skill | 低 |
 | `sk doctor --watch` | 合并 doctor + watch，持续输出状态变化 | 低 |
-| Windows 支持 | Junction 回退（参考 jiweiyeah 的实现） | 低 |
+| Windows 支持 | 技术上可用 Junction（`fs.symlinkSync` + `'junction'`，无需管理员权限）。但 `~/.claude/` 等 Unix 路径约定在 Windows 上不成立，agent 发现机制需完整重写。远期考虑。 | 低 |
 | MCP 集成 | 把 skill 暴露为 MCP 资源 | 远期 |
 
 ---
