@@ -174,7 +174,7 @@ describe('safeCreateSymlink', () => {
     fs.writeFileSync(target, 'hello');
     safeCreateSymlink(target, link);
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 
   it('should overwrite an existing file', () => {
@@ -184,7 +184,7 @@ describe('safeCreateSymlink', () => {
     fs.writeFileSync(link, 'old content');
     safeCreateSymlink(target, link);
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 
   it('should overwrite an existing directory', () => {
@@ -195,7 +195,7 @@ describe('safeCreateSymlink', () => {
     fs.writeFileSync(path.join(link, 'file.txt'), 'inside');
     safeCreateSymlink(target, link);
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 
   it('should create parent directories if needed', () => {
@@ -214,7 +214,7 @@ describe('safeCreateSymlink', () => {
     fs.writeFileSync(oldTarget, 'old');
     fs.symlinkSync(oldTarget, link);
     safeCreateSymlink(target, link);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 });
 
@@ -435,7 +435,7 @@ describe('safeCreateSymlink with scope validation', () => {
 
     safeCreateSymlink(target, link, scope);
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 
   it('should throw when target is outside scope', () => {
@@ -472,6 +472,6 @@ describe('safeCreateSymlink with scope validation', () => {
     // Should overwrite without TOCTOU race
     safeCreateSymlink(target, link);
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(link)).toBe(target);
+    expect(fs.readlinkSync(link)).toBe(path.relative(path.dirname(link), target));
   });
 });

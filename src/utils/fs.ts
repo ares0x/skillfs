@@ -74,7 +74,11 @@ export function getSymlinkTarget(filePath: string): string | undefined {
   const resolved = resolveHomePath(filePath);
   try {
     if (isSymlink(resolved)) {
-      return fs.readlinkSync(resolved);
+      const target = fs.readlinkSync(resolved);
+      // Resolve relative targets against the symlink's parent directory
+      // so callers always get an absolute path regardless of how the symlink was created.
+      if (path.isAbsolute(target)) return target;
+      return path.resolve(path.dirname(resolved), target);
     }
   } catch {
     // Ignore error
@@ -110,16 +114,22 @@ export function safeCreateSymlink(target: string, linkPath: string, targetScope?
   // Ensure parent directory of link path exists
   ensureDirExists(path.dirname(resolvedLinkPath));
 
+  // Compute a relative symlink target so the link survives home-directory
+  // renames and machine migrations. Falls back to absolute if relative computation
+  // fails (e.g. different filesystems).
+  const symlinkTarget =
+    path.relative(path.dirname(resolvedLinkPath), resolvedTarget) || resolvedTarget;
+
   // Try symlinkSync directly; handle EEXIST by removing and retrying.
   // This avoids the TOCTOU window between existsSync/rmSync/symlinkSync.
   try {
-    fs.symlinkSync(resolvedTarget, resolvedLinkPath);
+    fs.symlinkSync(symlinkTarget, resolvedLinkPath);
   } catch (err: unknown) {
     const nodeErr = err as NodeJS.ErrnoException;
     if (nodeErr.code === 'EEXIST') {
       // Something exists at the link path — remove and retry
       fs.rmSync(resolvedLinkPath, { recursive: true, force: true });
-      fs.symlinkSync(resolvedTarget, resolvedLinkPath);
+      fs.symlinkSync(symlinkTarget, resolvedLinkPath);
     } else {
       throw err;
     }
