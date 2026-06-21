@@ -135,9 +135,66 @@ export function analyzeRuntimes(): DoctorAnalysis {
 }
 
 /**
+ * Serializes the DoctorAnalysis into the JSON report structure,
+ * formatting all paths for display.
+ */
+export function serializeAnalysisToJson(analysis: DoctorAnalysis): object {
+  const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes } = analysis;
+
+  const runtimes = scanResult.runtimes.map(r => ({
+    name: r.name,
+    path: formatPath(r.path),
+    exists: r.exists,
+    skillCount: r.skills.length,
+  }));
+
+  const central = {
+    exists: scanResult.central.exists,
+    skillCount: scanResult.central.skills.length,
+    path: formatPath(scanResult.central.path),
+  };
+
+  const dupesJson = duplicates.map(d => ({
+    name: d.name,
+    identical: d.identical,
+    copies: d.skills.length,
+    savingsBytes: getDirectorySize(d.skills[0].path) * (d.skills.length - 1),
+    paths: d.skills.map(s => formatPath(s.path)),
+  }));
+
+  const incompleteTransactions = getIncompleteTransactions().map(t => ({
+    skillName: t.skillName,
+    timestamp: t.timestamp,
+    source: formatPath(t.source),
+    dest: formatPath(t.dest),
+  }));
+
+  return {
+    runtimes,
+    central,
+    duplicates: dupesJson,
+    totalDuplicatesCount,
+    conflictsCount,
+    savingsBytes,
+    incompleteTransactions,
+  };
+}
+
+export interface DoctorOptions {
+  json?: boolean;
+}
+
+/**
  * Executes the sk doctor command and outputs the analysis report.
  */
-export function runDoctor(): void {
+export function runDoctor(options: DoctorOptions = {}): void {
+  if (options.json) {
+    const analysis = analyzeRuntimes();
+    const json = serializeAnalysisToJson(analysis);
+    console.log(JSON.stringify(json, null, 2));
+    return;
+  }
+
   display.header('SkillFS Doctor 🔍');
   
   const analysis = analyzeRuntimes();

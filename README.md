@@ -9,6 +9,7 @@
   <a href="#quick-start"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
   <a href="#"><img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-ISC-blue" alt="License"></a>
+  <a href="https://github.com/ares0x/skillfs/actions/workflows/ci.yml"><img src="https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="README_CN.md">中文文档</a>
 </p>
 
@@ -50,12 +51,14 @@ That's it. Your agents won't notice the difference — they follow symlinks tran
 
 ```
 sk doctor          Scan all runtimes, find duplicates, estimate savings
+sk doctor --json   Machine-readable JSON output for automation
 sk dedupe          Migrate duplicates to ~/.skills/, replace with symlinks
 sk dedupe --dry-run   Preview without touching anything
 sk install <path>  Install a skill to ~/.skills/ and link to runtimes
 sk uninstall <name>   Remove a skill from ~/.skills/ and clean up symlinks
 sk link --all      Link all ~/.skills/ back to every runtime
 sk list            Visual tree of every skill and its link status
+sk watch           Watch runtime dirs for new skills in real time
 ```
 
 ### `sk doctor`
@@ -167,6 +170,23 @@ sk uninstall my-skill -r claude # Remove from one runtime only, keep ~/.skills/
 
 When removing from all runtimes (no `--runtime` flag), every symlink pointing to `~/.skills/<name>` is removed, the central copy is deleted, and the registry entry is cleared. With `--runtime`, only the specified runtime's symlink is removed.
 
+### `sk watch`
+
+Monitor runtime skills directories for new skills in real time:
+
+```bash
+sk watch                  # Watch all configured runtimes
+sk watch --runtime claude # Watch one runtime only
+```
+
+Polling-based detection (every 2 seconds) — reliable across all platforms. When a new skill directory containing a `SKILL.md` appears, prints:
+
+```
+✨ 发现新 skill: my-skill — 使用 sk install ~/.claude/skills/my-skill 安装
+```
+
+Runs until `Ctrl+C`. Graceful shutdown on `SIGINT`.
+
 ---
 
 ## CLI Reference
@@ -183,10 +203,17 @@ sk --version    # Print version number (1.0.0)
 Auto-discover agents and scan for duplicates, estimate savings.
 
 ```bash
-sk doctor
+sk doctor              # Human-readable report
+sk doctor --json       # Machine-readable JSON output
 ```
 
-No options. Run it anytime — it's read-only, zero side effects. Automatically finds any `~/.{name}/skills/` directory with valid `SKILL.md` files.
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--json` | — | Output analysis results as structured JSON to stdout |
+
+Run it anytime — it's read-only, zero side effects. Automatically finds any `~/.{name}/skills/` directory with valid `SKILL.md` files.
+
+When `--json` is passed, the output is a JSON object with `runtimes`, `central`, `duplicates`, `totalDuplicatesCount`, `conflictsCount`, `savingsBytes`, and `incompleteTransactions` fields — suitable for piping to `jq` or consumption by other tools.
 
 ### `sk dedupe`
 
@@ -261,6 +288,21 @@ sk uninstall <name>                   # Remove from all runtimes and ~/.skills/
 | `--runtime <name>` | `-r` | Only remove symlink from the specified runtime. Keeps the skill in `~/.skills/`. Without this flag, removes everything: symlinks, central copy, and registry entry. |
 
 Only removes symlinks that actually point to `~/.skills/<name>`. Symlinks pointing elsewhere are left untouched.
+
+### `sk watch`
+
+Monitor runtime skills directories for new skills in real time.
+
+```bash
+sk watch                  # Watch all configured runtimes
+sk watch --runtime <name> # Watch one runtime only
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--runtime <name>` | `-r` | Only watch the specified runtime. Omitting watches all configured runtimes. |
+
+Polls every 2 seconds. Prints a notification when a new skill directory (with `SKILL.md`) appears. Runs until `Ctrl+C`.
 
 ---
 
@@ -353,12 +395,15 @@ If you only use one agent — you probably don't need this. If you have 27 and d
 
 ```
 src/
-├── index.ts              # Commander CLI entry (4 subcommands)
+├── index.ts              # Commander CLI entry (6 subcommands)
 ├── commands/
-│   ├── doctor.ts         # Scan, analyze, report
+│   ├── doctor.ts         # Scan, analyze, report (human + JSON)
 │   ├── dedupe.ts         # Migrate with rollback + interactive diff
 │   ├── link.ts           # Symlink management
-│   └── list.ts           # Tree visualization
+│   ├── list.ts           # Tree visualization
+│   ├── install.ts        # Skill installation
+│   ├── uninstall.ts      # Skill removal
+│   └── watch.ts          # Real-time directory monitor
 ├── core/
 │   ├── config.ts         # Runtime definitions + custom config
 │   ├── registry.ts       # ~/.skills/registry.json with atomic locking

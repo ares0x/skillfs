@@ -7,6 +7,7 @@ import { runLink } from './commands/link.js';
 import { runList } from './commands/list.js';
 import { runInstall, runInstallAllFromRuntime } from './commands/install.js';
 import { runUninstall } from './commands/uninstall.js';
+import { runWatch } from './commands/watch.js';
 import { display } from './utils/display.js';
 
 const program = new Command();
@@ -19,9 +20,10 @@ program
 program
   .command('doctor')
   .description('扫描并发现所有运行时的重复 Skill 和潜在节省空间')
-  .action(() => {
+  .option('--json', '以 JSON 格式输出分析结果')
+  .action((options) => {
     try {
-      runDoctor();
+      runDoctor({ json: options.json === true });
     } catch (err: any) {
       display.error(`doctor 命令执行失败: ${err.message}`);
       display.info('运行 sk doctor --help 查看帮助信息。');
@@ -114,6 +116,20 @@ program
     } catch (err: any) {
       display.error(`uninstall 命令执行失败: ${err.message}`);
       display.info('使用 sk uninstall --help 查看用法。');
+      process.exit(1);
+    }
+  });
+
+program
+  .command('watch')
+  .description('监听运行时目录，发现新 skill 时通知')
+  .option('-r, --runtime <runtime>', '仅监听指定运行时 (例如: claude, cursor)')
+  .action(async (options) => {
+    try {
+      await runWatch({ runtime: options.runtime });
+    } catch (err: any) {
+      display.error(`watch 命令执行失败: ${err.message}`);
+      display.info('使用 sk watch --help 查看帮助信息。');
       process.exit(1);
     }
   });
