@@ -4,4 +4,4 @@ dist/
 .env
 .DS_Store
 .agents/
-docs/
+docs/prd.md
