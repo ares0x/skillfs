@@ -30,18 +30,20 @@ interface TransactionEntry {
   runtimes: string[];
 }
 
-const TXN_LOG_PATH = path.join(resolveHomePath('~/.skills'), '.dedupe-txn.log');
+function getTxnLogPath(): string {
+  return path.join(resolveHomePath('~/.skills'), '.dedupe-txn.log');
+}
 
 function appendTransaction(entry: TransactionEntry): void {
   ensureDirExists(resolveHomePath('~/.skills'));
   const line = JSON.stringify(entry) + '\n';
-  fs.appendFileSync(TXN_LOG_PATH, line, 'utf8');
+  fs.appendFileSync(getTxnLogPath(), line, 'utf8');
 }
 
 export function getIncompleteTransactions(): TransactionEntry[] {
   try {
-    if (!fs.existsSync(TXN_LOG_PATH)) return [];
-    const content = fs.readFileSync(TXN_LOG_PATH, 'utf8').trim();
+    if (!fs.existsSync(getTxnLogPath())) return [];
+    const content = fs.readFileSync(getTxnLogPath(), 'utf8').trim();
     if (!content) return [];
     const lines = content.split('\n');
     const entries: TransactionEntry[] = [];
