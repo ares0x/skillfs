@@ -7,8 +7,8 @@
 
 <p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests"></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-ISC-blue" alt="License"></a>
+  <img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/license-ISC-blue" alt="License">
   <a href="https://github.com/ares0x/skillfs/actions/workflows/ci.yml"><img src="https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="README_CN.md">中文文档</a>
 </p>
@@ -49,7 +49,7 @@ That's it. Your agents won't notice the difference — they follow symlinks tran
 
 ## Features
 
-```
+```text
 sk doctor          Scan all runtimes, find duplicates, estimate savings
 sk doctor --json   Machine-readable JSON output for automation
 sk dedupe          Migrate duplicates to ~/.skills/, replace with symlinks
@@ -195,7 +195,7 @@ Runs until `Ctrl+C`. Graceful shutdown on `SIGINT`.
 
 ```bash
 sk --help       # Show all commands and options
-sk --version    # Print version number (1.0.0)
+sk --version    # Print version number
 ```
 
 ### `sk doctor`

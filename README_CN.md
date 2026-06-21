@@ -7,8 +7,8 @@
 
 <p align="center">
   <a href="#快速开始"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests"></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-ISC-blue" alt="License"></a>
+  <img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/license-ISC-blue" alt="License">
   <a href="https://github.com/ares0x/skillfs/actions/workflows/ci.yml"><img src="https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="README.md">English</a>
 </p>
@@ -49,7 +49,7 @@ sk dedupe
 
 ## 功能
 
-```
+```text
 sk doctor          扫描所有运行时，发现重复，估算可节省空间
 sk doctor --json   以 JSON 格式输出，适合自动化处理
 sk dedupe          把重复 skill 迁移到 ~/.skills/，原位置替换为软链接
@@ -194,7 +194,7 @@ sk watch --runtime claude # 仅监听指定运行时
 
 ```bash
 sk --help       # 显示所有命令和选项
-sk --version    # 打印版本号 (1.0.0)
+sk --version    # 打印版本号
 ```
 
 ### `sk doctor`
