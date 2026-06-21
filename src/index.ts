@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'fs';
 import { Command } from 'commander';
 import { runDoctor } from './commands/doctor.js';
 import { runDedupe } from './commands/dedupe.js';
@@ -15,7 +16,10 @@ const program = new Command();
 program
   .name('sk')
   .description('SkillFS - CLI tool to manage and deduplicate agent skills')
-  .version('1.0.0');
+  .version(
+    process.env.npm_package_version ||
+    (() => { try { return JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version; } catch { return 'unknown'; } })()
+  );
 
 program
   .command('doctor')
