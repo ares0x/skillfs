@@ -53,6 +53,7 @@ That's it. Your agents won't notice the difference — they follow symlinks tran
 ```text
 sk doctor          Scan all runtimes, find duplicates, estimate savings
 sk doctor --json   Machine-readable JSON output for automation
+sk doctor --snapshot  Cargo.lock-style reproducible lockfile
 sk dedupe          Migrate duplicates to ~/.skills/, replace with symlinks
 sk dedupe --dry-run   Preview without touching anything
 sk install <path>  Install a skill to ~/.skills/ and link to runtimes
@@ -70,6 +71,7 @@ sk watch           Watch runtime dirs for new skills in real time
 - **Identical duplicates** (same MD5 hash) — safe to auto-migrate
 - **Conflicting versions** (different content, same name) — needs your decision
 - **Disk space savings** — how much you'll reclaim
+- **Drift detection** — warns if a skill's SKILL.md has changed since last registry update
 - **Incomplete transactions** — if a previous `dedupe` was interrupted, tells you how to recover
 
 ```
@@ -206,11 +208,13 @@ Auto-discover agents and scan for duplicates, estimate savings.
 ```bash
 sk doctor              # Human-readable report
 sk doctor --json       # Machine-readable JSON output
+sk doctor --snapshot   # Cargo.lock-style lockfile
 ```
 
 | Option | Alias | Description |
 |--------|-------|-------------|
 | `--json` | — | Output analysis results as structured JSON to stdout |
+| `--snapshot` | — | Output a reproducible lockfile (`{ skills: { name: { hash, runtimes } } }`) |
 
 Run it anytime — it's read-only, zero side effects. Automatically finds any `~/.{name}/skills/` directory with valid `SKILL.md` files.
 

@@ -52,7 +52,8 @@ sk dedupe
 
 ```text
 sk doctor          扫描所有运行时，发现重复，估算可节省空间
-sk doctor --json   以 JSON 格式输出，适合自动化处理
+sk doctor --json      以 JSON 格式输出，适合自动化处理
+sk doctor --snapshot  Cargo.lock 风格的可复现锁文件
 sk dedupe          把重复 skill 迁移到 ~/.skills/，原位置替换为软链接
 sk dedupe --dry-run   仅预览，不实际修改任何文件
 sk install <path>  安装 skill 到 ~/.skills/ 并链接到运行时
@@ -207,11 +208,13 @@ sk --version    # 打印版本号
 ```bash
 sk doctor              # 人类可读的报告
 sk doctor --json       # 机器可读的 JSON 输出
+sk doctor --snapshot   # Cargo.lock 风格快照
 ```
 
 | 选项 | 别名 | 说明 |
 |------|------|------|
 | `--json` | — | 将分析结果以结构化 JSON 格式输出到 stdout |
+| `--snapshot` | — | 输出可复现的锁文件（`{ skills: { name: { hash, runtimes } } }`） |
 
 随时可运行——只读操作，零副作用。
 
