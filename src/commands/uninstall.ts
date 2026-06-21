@@ -25,8 +25,8 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
   const skillInRegistry = entry !== undefined;
 
   if (!skillExistsInCentral && !skillInRegistry) {
-    display.error(`Skill "${skillName}" 未找到。`);
-    display.info(`请确认 Skill 名称正确。已安装的 Skill 可通过 sk list 查看。`);
+    display.error(`Skill "${skillName}" not found.`);
+    display.info(`Check the skill name. Use sk list to see installed skills.`);
     return;
   }
 
@@ -37,28 +37,28 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
 
     // Verify it's a symlink pointing to ~/.skills/<name>
     if (!isSymlink(symlinkPath)) {
-      display.error(`在 ${formatPath(symlinkPath)} 未找到指向 ${formatPath(skillPath)} 的软链接。`);
+      display.error(`No symlink found at ${formatPath(symlinkPath)} pointing to ${formatPath(skillPath)}.`);
       return;
     }
 
     const linkTarget = getSymlinkTarget(symlinkPath);
     if (!linkTarget || resolveHomePath(linkTarget) !== skillPath) {
-      display.error(`在 ${formatPath(symlinkPath)} 的软链接未指向 ${formatPath(skillPath)}，跳过。`);
+      display.error(`Symlink at ${formatPath(symlinkPath)} does not point to ${formatPath(skillPath)}, skipping.`);
       return;
     }
 
     // Remove the symlink
     try {
       removeDirectory(symlinkPath);
-      display.success(`已移除软链接: ${formatPath(symlinkPath)}`);
+      display.success(`Removed symlink: ${formatPath(symlinkPath)}`);
     } catch (err: any) {
-      display.error(`移除软链接失败: ${err.message}`);
+      display.error(`Failed to remove symlink: ${err.message}`);
       return;
     }
 
     // Deregister from registry for this runtime
     deregisterSkillRuntime(skillName, runtimeName);
-    display.success(`已从 ${display.bold(runtimeName)} 运行时取消注册 "${skillName}"。`);
+    display.success(`Deregistered "${skillName}" from runtime ${display.bold(runtimeName)}.`);
 
   } else {
     // Case 2: Remove from ALL runtimes and ~/.skills/
@@ -76,7 +76,7 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
               removeDirectory(symlinkPath);
               removedRuntimes.push(runtimeName);
             } catch (err: any) {
-              display.warn(`无法移除软链接 ${formatPath(symlinkPath)}: ${err.message}`);
+              display.warn(`Failed to remove symlink ${formatPath(symlinkPath)}: ${err.message}`);
             }
           }
         }
@@ -96,7 +96,7 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
               removeDirectory(symlinkPath);
               removedRuntimes.push(rt.name);
             } catch (err: any) {
-              display.warn(`无法移除软链接 ${formatPath(symlinkPath)}: ${err.message}`);
+              display.warn(`Failed to remove symlink ${formatPath(symlinkPath)}: ${err.message}`);
             }
           }
         }
@@ -107,9 +107,9 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
     if (skillExistsInCentral) {
       try {
         removeDirectory(skillPath);
-        display.success(`已移除目录: ${formatPath(skillPath)}`);
+        display.success(`Removed directory: ${formatPath(skillPath)}`);
       } catch (err: any) {
-        display.error(`移除目录 ${formatPath(skillPath)} 失败: ${err.message}`);
+        display.error(`Failed to remove directory ${formatPath(skillPath)}: ${err.message}`);
       }
     }
 
@@ -127,9 +127,9 @@ export async function runUninstall(skillName: string, options: UninstallOptions)
 
     // Report
     if (removedRuntimes.length > 0) {
-      display.success(`已移除软链接从: [${removedRuntimes.join(', ')}]`);
+      display.success(`Removed symlinks from: [${removedRuntimes.join(', ')}]`);
     }
-    display.success(`已卸载 ${display.bold(skillName)}。`);
+    display.success(`Uninstalled ${display.bold(skillName)}.`);
   }
 
   console.log('');

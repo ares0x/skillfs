@@ -113,7 +113,7 @@ function simpleSideBySideDiff(lines1: string[], lines2: string[], label1: string
   const maxLines = Math.max(lines1.length, lines2.length);
   const maxShown = 100; // Show at most 100 lines to avoid flooding the terminal
 
-  console.log(chalk.yellow(`  ⚠ 文件过大 (${lines1.length} vs ${lines2.length} 行)，显示前 ${Math.min(maxLines, maxShown)} 行的并列对比：`));
+  console.log(chalk.yellow(`  ⚠ Large files (${lines1.length} vs ${lines2.length} lines), showing first ${Math.min(maxLines, maxShown)} lines side-by-side:`));
   console.log(chalk.gray(`  ${''.padEnd(40)} ${label1.padEnd(40)} | ${label2}`));
 
   for (let i = 0; i < Math.min(maxLines, maxShown); i++) {
@@ -124,7 +124,7 @@ function simpleSideBySideDiff(lines1: string[], lines2: string[], label1: string
   }
 
   if (maxLines > maxShown) {
-    console.log(chalk.gray(`  ... 还有 ${maxLines - maxShown} 行被截断`));
+    console.log(chalk.gray(`  ... ${maxLines - maxShown} more lines truncated`));
   }
 }
 
@@ -195,14 +195,14 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
   const runtimes = allVersions.map(v => v.runtime);
 
   if (options.dryRun) {
-    display.info(`[DRY RUN] 将复制 ${formatPath(selectedSkill.path)} → ${formatPath(destPath)}`);
+    display.info(`[DRY RUN] Would copy ${formatPath(selectedSkill.path)} → ${formatPath(destPath)}`);
     for (const version of allVersions) {
-      display.info(`[DRY RUN] 将删除原始目录 ${formatPath(version.path)}，并创建软链接 → ${formatPath(destPath)}`);
+      display.info(`[DRY RUN] Would remove original ${formatPath(version.path)} and create symlink → ${formatPath(destPath)}`);
     }
     const sizePerCopy = getDirectorySize(selectedSkill.path);
     const savings = sizePerCopy * (allVersions.length - 1);
-    display.info(`[DRY RUN] 预计节省磁盘空间: ${formatBytes(savings)} (${allVersions.length - 1} 个副本各 ${formatBytes(sizePerCopy)})`);
-    display.info(`[DRY RUN] 将更新 registry，添加运行时: ${runtimes.join(', ')}`);
+    display.info(`[DRY RUN] Estimated space savings: ${formatBytes(savings)} (${allVersions.length - 1} copies × ${formatBytes(sizePerCopy)} each)`);
+    display.info(`[DRY RUN] Would update registry with runtimes: ${runtimes.join(', ')}`);
     return;
   }
 
@@ -218,7 +218,7 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
   appendTransaction(txnEntry);
 
   // Phase 1: Copy selected version to ~/.skills/<name>
-  display.info(`正在复制 ${formatPath(selectedSkill.path)} → ${formatPath(destPath)}...`);
+  display.info(`Copying ${formatPath(selectedSkill.path)} → ${formatPath(destPath)}...`);
 
   // If destination already exists, back it up before overwriting
   let destExisted = false;
@@ -228,9 +228,9 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
     destBackup = destPath + '.backup-' + Date.now();
     try {
       fs.renameSync(destPath, destBackup);
-      display.warn(`已有目标存在，已备份至 ${formatPath(destBackup)}`);
+      display.warn(`Existing destination backed up to ${formatPath(destBackup)}`);
     } catch (err: any) {
-      throw new Error(`无法备份已有目标 ${formatPath(destPath)}: ${err.message}`);
+      throw new Error(`Failed to backup existing destination ${formatPath(destPath)}: ${err.message}`);
     }
   }
 
@@ -238,23 +238,23 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
     // Step 1: Copy
     ensureDirExists(centralRoot);
     copyDirectory(selectedSkill.path, destPath);
-    display.success(`复制完成: ${formatPath(destPath)}`);
+    display.success(`Copy complete: ${formatPath(destPath)}`);
 
     // Step 2: Verify the copy
-    display.info(`正在验证副本完整性...`);
+    display.info(`Verifying copy integrity...`);
     const srcHash = await hashDirectory(selectedSkill.path);
     const destHash = await hashDirectory(destPath);
     if (srcHash !== destHash) {
-      throw new Error(`副本验证失败: hash 不匹配 (src=${srcHash.slice(0, 8)}..., dest=${destHash.slice(0, 8)}...)`);
+      throw new Error(`Copy verification failed: hash mismatch (src=${srcHash.slice(0, 8)}..., dest=${destHash.slice(0, 8)}...)`);
     }
-    display.success(`副本验证通过 (hash: ${srcHash.slice(0, 8)}...)`);
+    display.success(`Copy verified (hash: ${srcHash.slice(0, 8)}...)`);
 
     // Step 3: Remove all originals and create symlinks
     for (const version of allVersions) {
       const versionPath = version.path;
       // Skip if the selected skill IS this version and we already copied it
       // (the selected skill's original is replaced with a symlink too)
-      display.info(`正在处理 ${formatPath(versionPath)}: 删除原始目录并创建软链接...`);
+      display.info(`Processing ${formatPath(versionPath)}: removing original and creating symlink...`);
       removeDirectory(versionPath);
       safeCreateSymlink(destPath, versionPath, centralRoot);
       display.success(`  ${formatPath(versionPath)} → ${formatPath(destPath)}`);
@@ -262,7 +262,7 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
 
     // Step 4: Update registry
     syncSkillRuntimes(selectedSkill.name, runtimes);
-    display.success(`Registry 已更新: ${selectedSkill.name} → [${runtimes.join(', ')}]`);
+    display.success(`Registry updated: ${selectedSkill.name} → [${runtimes.join(', ')}]`);
 
     // Clean up backup if everything succeeded
     if (destBackup && fs.existsSync(destBackup)) {
@@ -272,18 +272,18 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
     // Mark transaction as completed
     txnEntry.status = 'completed';
     appendTransaction(txnEntry);
-    display.success(`Skill ${display.bold(selectedSkill.name)} 已成功去重并迁移！`);
+    display.success(`Skill ${display.bold(selectedSkill.name)} deduplicated and migrated successfully!`);
   } catch (err: any) {
-    display.error(`迁移失败: ${err.message}`);
-    display.info('正在回滚...');
+    display.error(`Migration failed: ${err.message}`);
+    display.info('Rolling back...');
 
     // Rollback: remove partial copy at dest
     if (fs.existsSync(destPath)) {
       try {
         removeDirectory(destPath);
-        display.info(`已删除不完整副本: ${formatPath(destPath)}`);
+        display.info(`Removed incomplete copy: ${formatPath(destPath)}`);
       } catch (cleanErr: any) {
-        display.warn(`清理副本失败: ${cleanErr.message}`);
+        display.warn(`Cleanup failed: ${cleanErr.message}`);
       }
     }
 
@@ -291,9 +291,9 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
     if (destBackup && fs.existsSync(destBackup)) {
       try {
         fs.renameSync(destBackup, destPath);
-        display.info(`已恢复备份: ${formatPath(destPath)}`);
+        display.info(`Restored backup: ${formatPath(destPath)}`);
       } catch (restoreErr: any) {
-        display.warn(`恢复备份失败: ${restoreErr.message}, 备份位于 ${formatPath(destBackup)}`);
+        display.warn(`Restore backup failed: ${restoreErr.message}, backup at ${formatPath(destBackup)}`);
       }
     }
 
@@ -301,7 +301,7 @@ async function migrateSkill(selectedSkill: Skill, allVersions: Skill[], options:
     txnEntry.status = 'rolled_back';
     appendTransaction(txnEntry);
 
-    throw new Error(`迁移 ${selectedSkill.name} 失败，已回滚所有更改。原因: ${err.message}`);
+    throw new Error(`Migration of ${selectedSkill.name} failed, all changes rolled back. Reason: ${err.message}`);
   }
 }
 
@@ -315,22 +315,22 @@ async function resolveConflict(groupName: string, skills: Skill[], options: Dedu
   let skipped = false;
 
   while (!resolved) {
-    console.log(chalk.bold.yellow(`\n⚠ ${groupName} 存在版本冲突，请选择保留哪个：\n`));
+    console.log(chalk.bold.yellow(`\n⚠ ${groupName} has version conflicts. Choose which version to keep:\n`));
 
     for (let index = 0; index < sorted.length; index++) {
       const skill = sorted[index];
       const mtime = getSkillMtime(skill.path);
       const size = getDirectorySize(skill.path);
       console.log(`  [${index + 1}] ${formatPath(skill.path)}`);
-      console.log(`      修改于 ${formatDate(mtime)}，大小 ${formatBytes(size)}`);
-      console.log(`      预览：${skill.description || '(无描述)'}\n`);
+      console.log(`      Modified ${formatDate(mtime)}, size ${formatBytes(size)}`);
+      console.log(`      Preview: ${skill.description || '(no description)'}\n`);
     }
 
-    console.log(`  [s] 跳过，暂不处理`);
-    console.log(`  [d] 查看 diff\n`);
+    console.log(`  [s] Skip for now`);
+    console.log(`  [d] Show diff\n`);
 
     if (options.dryRun) {
-      display.info(`[DRY RUN] 跳过交互式冲突解决。将选择版本 1 (最新) 进行模拟。`);
+      display.info(`[DRY RUN] Skipping interactive conflict resolution. Selecting version 1 (newest) for simulation.`);
       const selectedSkill = sorted[0];
       await migrateSkill(selectedSkill, skills, options);
       resolved = true;
@@ -341,13 +341,13 @@ async function resolveConflict(groupName: string, skills: Skill[], options: Dedu
       {
         type: 'input',
         name: 'choice',
-        message: '选择 (数字/s/d):',
+        message: 'Choice (number/s/d):',
         validate: (input: string) => {
           const val = input.trim().toLowerCase();
           if (val === 's' || val === 'd') return true;
           const num = parseInt(val, 10);
           if (!isNaN(num) && num >= 1 && num <= sorted.length) return true;
-          return `请输入 1-${sorted.length}，或者 s/d`;
+          return `Please enter 1-${sorted.length}, or s/d`;
         }
       }
     ]);
@@ -355,7 +355,7 @@ async function resolveConflict(groupName: string, skills: Skill[], options: Dedu
     const choice = answers.choice.trim().toLowerCase();
 
     if (choice === 's') {
-      display.warn(`已跳过 ${groupName} 的去重处理`);
+      display.warn(`Skipped deduplication of ${groupName}`);
       resolved = true;
       skipped = true;
     } else if (choice === 'd') {
@@ -374,7 +374,7 @@ async function resolveConflict(groupName: string, skills: Skill[], options: Dedu
 
         printDiff(content1, content2, formatPath(skill1.path), formatPath(skill2.path));
       } else {
-        console.log(chalk.red('不足两个版本，无法进行 diff 比较。'));
+        console.log(chalk.red('Need at least two versions to diff.'));
       }
     } else {
       const idx = parseInt(choice, 10) - 1;
@@ -397,12 +397,12 @@ export async function runDedupe(options: DedupeOptions = { dryRun: false }): Pro
   const { duplicates, savingsBytes } = analysis;
 
   if (duplicates.length === 0) {
-    console.log(display.green('  ✓ 未发现重复 Skill，无需去重！\n'));
+    console.log(display.green('  ✓ No duplicates found, nothing to dedupe!\n'));
     return;
   }
 
   if (options.dryRun) {
-    display.info(`发现 ${duplicates.length} 组重复 Skill，预计可节省 ${formatBytes(savingsBytes)} 磁盘空间。`);
+    display.info(`Found ${duplicates.length} duplicate groups, estimated ${formatBytes(savingsBytes)} savings.`);
     console.log('');
   }
 
@@ -411,12 +411,12 @@ export async function runDedupe(options: DedupeOptions = { dryRun: false }): Pro
 
   for (const group of duplicates) {
     if (group.identical) {
-      console.log(`\n发现相同 Skill ${display.bold(group.name)}，正在${options.dryRun ? '模拟' : '自动'}去重...`);
+      console.log(`\nFound identical skill ${display.bold(group.name)}, ${options.dryRun ? 'simulating' : 'auto-'}deduplicating...`);
       try {
         await migrateSkill(group.skills[0], group.skills, options);
         migratedCount++;
       } catch (err: any) {
-        display.error(`去重 ${group.name} 失败: ${err.message}`);
+        display.error(`Deduplication of ${group.name} failed: ${err.message}`);
         skippedCount++;
       }
     } else {
@@ -429,20 +429,20 @@ export async function runDedupe(options: DedupeOptions = { dryRun: false }): Pro
           migratedCount++;
         }
       } catch (err: any) {
-        display.error(`解决冲突 ${group.name} 失败: ${err.message}`);
+        display.error(`Conflict resolution for ${group.name} failed: ${err.message}`);
         skippedCount++;
       }
     }
   }
 
-  console.log(`\n${options.dryRun ? '[DRY RUN] ' : ''}去重报告：`);
-  display.success(`成功去重：${migratedCount} 个 Skill${options.dryRun ? ' (模拟)' : ''}`);
+  console.log(`\n${options.dryRun ? '[DRY RUN] ' : ''}Deduplication report:`);
+  display.success(`Migrated: ${migratedCount} skill(s)${options.dryRun ? ' (simulated)' : ''}`);
   if (skippedCount > 0) {
-    display.warn(`跳过处理：${skippedCount} 个 Skill`);
+    display.warn(`Skipped: ${skippedCount} skill(s)`);
   }
   if (options.dryRun) {
-    display.info(`预计节省磁盘空间: ${formatBytes(savingsBytes)}`);
-    display.info('使用 sk dedupe (不加 --dry-run) 来实际执行迁移。');
+    display.info(`Estimated space savings: ${formatBytes(savingsBytes)}`);
+    display.info('Run sk dedupe (without --dry-run) to execute the migration.');
   }
   console.log('');
 }

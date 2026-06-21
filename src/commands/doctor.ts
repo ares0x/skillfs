@@ -260,13 +260,13 @@ export function runDoctor(options: DoctorOptions = {}): void {
   const analysis = analyzeRuntimes();
   const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes, driftedSkills } = analysis;
 
-  console.log('扫描目录：');
+  console.log('Scanned directories:');
   for (const runtime of scanResult.runtimes) {
     const formatted = formatPath(runtime.path);
     if (runtime.exists) {
       display.success(`${formatted}${' '.repeat(Math.max(2, 24 - formatted.length))}(${runtime.skills.length} skills)`);
     } else {
-      display.warn(`${formatted} (目录未启用)`);
+      display.warn(`${formatted} (directory not enabled)`);
     }
   }
 
@@ -274,18 +274,18 @@ export function runDoctor(options: DoctorOptions = {}): void {
   if (scanResult.central.exists) {
     display.success(`${centralFormatted}${' '.repeat(Math.max(2, 24 - centralFormatted.length))}(${scanResult.central.skills.length} skills)`);
   } else {
-    display.warn(`${centralFormatted} (不存在，将在 dedupe 时创建)`);
+    display.warn(`${centralFormatted} (does not exist, will be created on dedupe)`);
   }
 
   console.log('');
 
   if (duplicates.length > 0) {
-    console.log('发现重复 Skill：\n');
+    console.log('Duplicates found:\n');
 
     for (const group of duplicates) {
       const statusLabel = group.identical 
-        ? display.green('[内容相同 ✓]') 
-        : display.yellow('[内容不同 ⚠]');
+        ? display.green('[identical ✓]') 
+        : display.yellow('[content differs ⚠]');
 
       console.log(`  ${display.bold(group.name)}${' '.repeat(Math.max(1, 14 - group.name.length))}× ${group.skills.length}  ${statusLabel}`);
       
@@ -303,26 +303,26 @@ export function runDoctor(options: DoctorOptions = {}): void {
         if (group.identical) {
           display.dim(`${formattedSkillPath}`);
         } else {
-          const ageLabel = i === 0 ? '较新' : '较旧';
-          display.dim(`${formattedSkillPath}   (${ageLabel}，修改于 ${mtimeStr})`);
+          const ageLabel = i === 0 ? 'newer' : 'older';
+          display.dim(`${formattedSkillPath}   (${ageLabel}, modified ${mtimeStr})`);
         }
       }
       console.log('');
     }
   } else {
-    console.log(display.green('  ✓ 未发现重复 Skill。'));
+    console.log(display.green('  ✓ No duplicates found!'));
   }
 
   // Check for incomplete transactions from interrupted dedupe runs
   const incompleteTxns = getIncompleteTransactions();
   if (incompleteTxns.length > 0) {
     console.log('');
-    display.header('⚠ 检测到不完整的事务 (可能由中断的 dedupe 导致):');
+    display.header('⚠ Incomplete transactions detected (possibly from an interrupted dedupe):');
     for (const txn of incompleteTxns) {
-      display.warn(`Skill "${txn.skillName}" 的迁移在 ${txn.timestamp} 开始但未完成。`);
-      display.dim(`  来源: ${formatPath(txn.source)} → 目标: ${formatPath(txn.dest)}`);
-      display.dim(`  涉及运行时: ${txn.runtimes.join(', ')}`);
-      display.info(`  建议: 检查 ~/.skills/${txn.skillName} 和原始路径的完整性，然后重新运行 sk dedupe。`);
+      display.warn(`Skill "${txn.skillName}" migration started at ${txn.timestamp} but was not completed.`);
+      display.dim(`  Source: ${formatPath(txn.source)} → Dest: ${formatPath(txn.dest)}`);
+      display.dim(`  Involved runtimes: ${txn.runtimes.join(', ')}`);
+      display.info(`  Tip: Check integrity of ~/.skills/${txn.skillName} and original paths, then re-run sk dedupe.`);
     }
     console.log('');
   }
@@ -330,22 +330,22 @@ export function runDoctor(options: DoctorOptions = {}): void {
   // Drift detection: report skills whose content differs from registry
   if (driftedSkills.length > 0) {
     console.log('');
-    display.header('⚠ 内容漂移检测 (SKILL.md 与 registry 记录不一致):');
+    display.header('⚠ Content drift detected (SKILL.md differs from registry hash):');
     for (const d of driftedSkills) {
-      display.warn(`${d.name}: 内容与 registry 记录不一致（可能已被手动修改）`);
+      display.warn(`${d.name}: content has diverged from the registry (may have been manually edited)`);
       display.dim(`  Registry hash: ${d.registeredHash.slice(0, 8)}...`);
-      display.dim(`  当前 hash:     ${d.currentHash.slice(0, 8)}...`);
+      display.dim(`  Current hash:  ${d.currentHash.slice(0, 8)}...`);
     }
     console.log('');
   }
 
-  console.log('汇总：');
-  console.log(`  重复 Skill：${duplicates.length} 个（共 ${totalDuplicatesCount} 个副本）`);
-  console.log(`  内容冲突：${conflictsCount} 个${conflictsCount > 0 ? display.yellow('（需手动确认）') : ''}`);
-  console.log(`  可节省空间：约 ${formatBytes(savingsBytes)}`);
+  console.log('Summary:');
+  console.log(`  Duplicate groups: ${duplicates.length} (total ${totalDuplicatesCount} copies)`);
+  console.log(`  Content conflicts: ${conflictsCount}${conflictsCount > 0 ? display.yellow(' (manual confirmation needed)') : ''}`);
+  console.log(`  Potential savings: ~${formatBytes(savingsBytes)}`);
   if (driftedSkills.length > 0) {
-    console.log(`  内容漂移：${driftedSkills.length} 个`);
+    console.log(`  Content drift: ${driftedSkills.length}`);
   }
   console.log('');
-  console.log(`运行 ${display.bold('sk dedupe')} 开始迁移\n`);
+  console.log(`Run ${display.bold('sk dedupe')} to migrate\n`);
 }

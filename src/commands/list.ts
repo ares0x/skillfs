@@ -55,7 +55,7 @@ export function runList(): void {
   
   const centralSkills = scanResult.central.skills;
   if (centralSkills.length === 0) {
-    console.log('  (无 Skill)\n');
+    console.log('  (no skills)\n');
   } else {
     for (let index = 0; index < centralSkills.length; index++) {
       const skill = centralSkills[index];
@@ -87,23 +87,23 @@ export function runList(): void {
 
     if (unmigrated.length > 0) {
       hasUnmigrated = true;
-      console.log(`${formatPath(rt.path)} (额外，未迁移)`);
+      console.log(`${formatPath(rt.path)} (in runtime, not migrated)`);
       for (let index = 0; index < unmigrated.length; index++) {
         const skill = unmigrated[index];
         const prefix = index === unmigrated.length - 1 ? '└──' : '├──';
-        console.log(`  ${prefix} ${display.yellow(skill.name.padEnd(16))} (未在 ~/.skills 中)`);
+        console.log(`  ${prefix} ${display.yellow(skill.name.padEnd(16))} (not in ~/.skills/)`);
       }
       console.log('');
     }
   }
 
   if (!hasUnmigrated) {
-    display.success('所有运行时的 Skill 均已同步，无额外未迁移的 Skill。\n');
+    display.success('All skills are synced across runtimes.\n');
   } else {
-    console.log(`提示: 对已在 ~/.skills/ 中的 skill，使用 ${display.bold('sk link <name> --runtime <name>')} 将其链接到指定 agent。\n`);
-    console.log(`      对未在 ~/.skills/ 中的独立 skill，使用 ${display.bold('sk install --all-from claude')} 批量安装。\n`);
+    console.log(`Tip: For skills already in ~/.skills/, use ${display.bold('sk link <name> --runtime <name>')} to link to a specific agent.\n`);
+    console.log(`      For standalone skills not in ~/.skills/, use ${display.bold('sk install --all-from claude')} for batch install.\n`);
   }
 
   // 3. Legend
-  console.log('图例: ' + display.green('✓') + ' 已链接  ' + display.gray('-') + ' 未链接  ' + display.red('⚠') + ' 链接断裂\n');
+  console.log('Legend: ' + display.green('✓') + ' linked  ' + display.gray('-') + ' not linked  ' + display.red('⚠') + ' broken link\n');
 }

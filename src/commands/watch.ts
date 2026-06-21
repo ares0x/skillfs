@@ -21,7 +21,7 @@ export function runWatch(options: WatchOptions = {}): Promise<never> {
     if (options.runtime) {
       const rt = runtimes.find(r => r.name === options.runtime);
       if (!rt) {
-        display.error(`未知的 runtime: "${options.runtime}"。已配置的 runtime: ${runtimes.map(r => r.name).join(', ')}`);
+        display.error(`Unknown runtime: "${options.runtime}". Configured: ${runtimes.map(r => r.name).join(', ')}`);
         process.exit(1);
       }
       targets = [{ name: rt.name, dirPath: resolveHomePath(rt.path) }];

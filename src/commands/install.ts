@@ -25,15 +25,15 @@ async function installOneSkill(
   const destPath = path.join(centralRoot, skillName);
 
   if (dryRun) {
-    display.info(`[DRY RUN] 将复制 ${formatPath(sourceDir)} → ${formatPath(destPath)}`);
+    display.info(`[DRY RUN] Would copy ${formatPath(sourceDir)} → ${formatPath(destPath)}`);
     return skillName;
   }
 
   // Copy
-  display.info(`正在复制 ${formatPath(sourceDir)} → ${formatPath(destPath)}...`);
+  display.info(`Copying ${formatPath(sourceDir)} → ${formatPath(destPath)}...`);
   ensureDirExists(centralRoot);
   copyDirectory(sourceDir, destPath);
-  display.success(`复制完成: ${formatPath(destPath)}`);
+  display.success(`Copy complete: ${formatPath(destPath)}`);
 
   // Determine runtimes
   const runtimes = getRuntimeConfigs();
@@ -42,9 +42,9 @@ async function installOneSkill(
   if (targetRuntime) {
     const rt = runtimes.find((r) => r.name === targetRuntime);
     if (!rt) {
-      display.error(`未知的 runtime: "${targetRuntime}"。已配置: ${runtimes.map((r) => r.name).join(', ')}`);
+      display.error(`Unknown runtime: "${targetRuntime}". Configured: ${runtimes.map((r) => r.name).join(', ')}`);
       try { fs.rmSync(destPath, { recursive: true, force: true }); } catch { /* cleanup */ }
-      display.info(`已清理: ${formatPath(destPath)}。安装已取消。`);
+      display.info(`Cleaned up: ${formatPath(destPath)}. Installation cancelled.`);
       return null;
     }
     targetRuntimes = [rt];
@@ -63,14 +63,14 @@ async function installOneSkill(
       safeCreateSymlink(destPath, linkPath, centralRoot);
       registerSkillRuntime(skillName, rt.name);
       linkedRuntimes.push(rt.name);
-      display.success(`已链接到 ${display.bold(rt.name)}: ${formatPath(linkPath)}`);
+      display.success(`Linked to ${display.bold(rt.name)}: ${formatPath(linkPath)}`);
     } catch (err: any) {
-      display.warn(`链接到 ${rt.name} 失败: ${err.message}`);
+      display.warn(`Link to ${rt.name} failed: ${err.message}`);
     }
   }
 
   if (linkedRuntimes.length > 0) {
-    display.success(`已安装 ${display.bold(skillName)} → 已链接到 [${linkedRuntimes.join(', ')}]`);
+    display.success(`Installed ${display.bold(skillName)} → linked to [${linkedRuntimes.join(', ')}]`);
   }
   return skillName;
 }
@@ -84,19 +84,19 @@ export async function runInstall(sourcePath: string, options: InstallOptions): P
   const resolvedSource = resolveHomePath(sourcePath);
 
   if (!fs.existsSync(resolvedSource)) {
-    display.error(`路径不存在: ${formatPath(resolvedSource)}`);
+    display.error(`Path does not exist: ${formatPath(resolvedSource)}`);
     return;
   }
 
   if (!fs.lstatSync(resolvedSource).isDirectory()) {
-    display.error(`路径不是一个目录: ${formatPath(resolvedSource)}。请提供包含 SKILL.md 的目录路径。`);
+    display.error(`Path is not a directory: ${formatPath(resolvedSource)}. Please provide a directory containing SKILL.md.`);
     return;
   }
 
   const skillMdPath = path.join(resolvedSource, 'SKILL.md');
   if (!fs.existsSync(skillMdPath)) {
-    display.error(`目录 ${formatPath(resolvedSource)} 中未找到 SKILL.md 文件。`);
-    display.info('请确认目标目录包含有效的 SKILL.md 文件，或者路径是否正确。');
+    display.error(`No SKILL.md found in ${formatPath(resolvedSource)}.`);
+    display.info('Make sure the directory contains a valid SKILL.md file and the path is correct.');
     return;
   }
 
@@ -109,13 +109,13 @@ export async function runInstall(sourcePath: string, options: InstallOptions): P
       {
         type: 'confirm',
         name: 'overwrite',
-        message: `Skill "${skillName}" 已存在于 ${formatPath(destPath)}。是否覆盖？`,
+        message: `Skill "${skillName}" already exists at ${formatPath(destPath)}. Overwrite?`,
         default: false,
       },
     ]);
 
     if (!answers.overwrite) {
-      display.warn(`已跳过安装 "${skillName}"。`);
+      display.warn(`Skipped install of "${skillName}".`);
       return;
     }
   }
@@ -137,13 +137,13 @@ export async function runInstallAllFromRuntime(
   const runtimes = getRuntimeConfigs();
   const rt = runtimes.find((r) => r.name === sourceRuntime);
   if (!rt) {
-    display.error(`未知的 runtime: "${sourceRuntime}"。已配置: ${runtimes.map((r) => r.name).join(', ')}`);
+    display.error(`Unknown runtime: "${sourceRuntime}". Configured: ${runtimes.map((r) => r.name).join(', ')}`);
     return;
   }
 
   const runtimeSkillsDir = resolveHomePath(rt.path);
   if (!fs.existsSync(runtimeSkillsDir)) {
-    display.error(`runtime 目录不存在: ${formatPath(runtimeSkillsDir)}`);
+    display.error(`Runtime directory does not exist: ${formatPath(runtimeSkillsDir)}`);
     return;
   }
 
@@ -176,19 +176,19 @@ export async function runInstallAllFromRuntime(
       }
     }
   } catch (err: any) {
-    display.error(`扫描 ${formatPath(runtimeSkillsDir)} 失败: ${err.message}`);
+    display.error(`Scan of ${formatPath(runtimeSkillsDir)} failed: ${err.message}`);
     return;
   }
 
   const total = newSkills.length + relinkSkills.length;
   if (total === 0) {
-    display.success(`${formatPath(runtimeSkillsDir)} 中没有需要处理的 skill（全部已是软链接）。`);
+    display.success(`${formatPath(runtimeSkillsDir)} has no skills to process (all are already symlinks).`);
     return;
   }
 
-  display.info(`发现 ${total} 个 skill 需要处理（${formatPath(runtimeSkillsDir)}）${options.dryRun ? ' [DRY RUN]' : ''}`);
-  if (newSkills.length > 0) display.info(`  ${newSkills.length} 个新安装（不在 ~/.skills/ 中）`);
-  if (relinkSkills.length > 0) display.info(`  ${relinkSkills.length} 个需要替换为软链接（已在 ~/.skills/ 中）`);
+  display.info(`Found ${total} skill(s) to process (${formatPath(runtimeSkillsDir)})${options.dryRun ? ' [DRY RUN]' : ''}`);
+  if (newSkills.length > 0) display.info(`  ${newSkills.length} new install(s) (not in ~/.skills/)`);
+  if (relinkSkills.length > 0) display.info(`  ${relinkSkills.length} to replace with symlinks (already in ~/.skills/)`);
   console.log('');
 
   let installed = 0;
@@ -202,7 +202,7 @@ export async function runInstallAllFromRuntime(
       if (result) installed++;
       else skipped++;
     } catch (err: any) {
-      display.error(`${c.name} 安装失败: ${err.message}`);
+      display.error(`${c.name} install failed: ${err.message}`);
       skipped++;
     }
   }
@@ -213,24 +213,24 @@ export async function runInstallAllFromRuntime(
     const target = path.join(centralRoot, name);
     const linkPath = path.join(runtimeSkillsDir, name);
     if (options.dryRun) {
-      display.info(`[DRY RUN] 将替换 ${formatPath(linkPath)} → 软链接到 ${formatPath(target)}`);
+      display.info(`[DRY RUN] Would replace ${formatPath(linkPath)} → symlink to ${formatPath(target)}`);
       linked++;
       continue;
     }
     try {
       safeCreateSymlink(target, linkPath, centralRoot);
       registerSkillRuntime(name, sourceRuntime);
-      display.success(`已链接 ${display.bold(name)} → ${formatPath(linkPath)}`);
+      display.success(`Linked ${display.bold(name)} → ${formatPath(linkPath)}`);
       linked++;
     } catch (err: any) {
-      display.warn(`链接 ${name} 失败: ${err.message}`);
+      display.warn(`Link ${name} failed: ${err.message}`);
       skipped++;
     }
   }
 
-  console.log(`\n${options.dryRun ? '[DRY RUN] ' : ''}批量安装报告：`);
-  if (installed > 0) display.success(`新安装: ${installed} 个`);
-  if (linked > 0) display.success(`替换为软链接: ${linked} 个`);
-  if (skipped > 0) display.warn(`跳过/失败: ${skipped} 个`);
+  console.log(`\n${options.dryRun ? '[DRY RUN] ' : ''}Batch install report:`);
+  if (installed > 0) display.success(`New installs: ${installed}`);
+  if (linked > 0) display.success(`Relinked: ${linked}`);
+  if (skipped > 0) display.warn(`Skipped/failed: ${skipped}`);
   console.log('');
 }

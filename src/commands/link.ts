@@ -20,18 +20,18 @@ function linkSkillToRuntime(skillName: string, runtimeName: string, runtimePath:
   const targetPath = path.join(resolveHomePath(runtimePath), skillName);
 
   if (!fs.existsSync(sourcePath)) {
-    display.error(`无法链接: 中央仓库中不存在 Skill "${skillName}"。路径: ${formatPath(sourcePath)}`);
+    display.error(`Cannot link: Skill "${skillName}" does not exist in central repository. Path: ${formatPath(sourcePath)}`);
     return false;
   }
 
-  display.info(`正在创建软链接: ${formatPath(targetPath)} -> ${formatPath(sourcePath)}`);
+  display.info(`Creating symlink: ${formatPath(targetPath)} -> ${formatPath(sourcePath)}`);
   
   try {
     safeCreateSymlink(sourcePath, targetPath, centralRoot);
-    display.success(`成功链接 ${display.bold(skillName)} 到 ${display.bold(runtimeName)}`);
+    display.success(`Linked ${display.bold(skillName)} to ${display.bold(runtimeName)}`);
     return true;
   } catch (err: any) {
-    display.error(`链接 ${skillName} 到 ${runtimeName} 失败: ${err.message}`);
+    display.error(`Link ${skillName} to ${runtimeName} failed: ${err.message}`);
     return false;
   }
 }
@@ -46,7 +46,7 @@ export function runLink(skillName: string | undefined, options: LinkOptions): vo
   const centralRoot = getCentralSkillsPath();
 
   if (!fs.existsSync(centralRoot)) {
-    display.error(`中央仓库不存在，请先运行 ${display.bold('sk dedupe')} 初始化。`);
+    display.error(`Central repository does not exist. Run ${display.bold('sk dedupe')} first to initialize.`);
     return;
   }
 
@@ -60,11 +60,11 @@ export function runLink(skillName: string | undefined, options: LinkOptions): vo
     });
 
     if (skills.length === 0) {
-      display.warn('中央仓库中没有任何 Skill，无法链接。');
+      display.warn('No skills in central repository, nothing to link.');
       return;
     }
 
-    display.info(`正在链接所有 Skill (${skills.length} 个) 到所有 runtime...`);
+    display.info(`Linking all skills (${skills.length}) to all runtimes...`);
 
     // Collect successful links for batch registry update
     const batchEntries: Array<{name: string, runtime: string}> = [];
@@ -86,20 +86,20 @@ export function runLink(skillName: string | undefined, options: LinkOptions): vo
 
   // Check if a specific skillName is provided
   if (!skillName) {
-    display.error('请提供 Skill 名称或使用 --all 选项。运行 sk link --help 获知用法。');
+    display.error('Please provide a skill name or use --all. Run sk link --help for usage.');
     return;
   }
 
   // Verify the skill exists in central repo
   const sourcePath = path.join(centralRoot, skillName);
   if (!fs.existsSync(sourcePath)) {
-    display.error(`中央仓库中不存在 Skill "${skillName}"。`);
+    display.error(`Skill "${skillName}" does not exist in the central repository.`);
     return;
   }
 
   // Case 2: link <name> --all (Link specific skill to all runtimes)
   if (options.all) {
-    display.info(`正在链接 ${skillName} 到所有 runtime...`);
+    display.info(`Linking ${skillName} to all runtimes...`);
     const batchEntries: Array<{name: string, runtime: string}> = [];
     for (const rt of runtimes) {
       const ok = linkSkillToRuntime(skillName, rt.name, rt.path);
@@ -118,7 +118,7 @@ export function runLink(skillName: string | undefined, options: LinkOptions): vo
   if (options.runtime) {
     const rt = runtimes.find(r => r.name === options.runtime);
     if (!rt) {
-      display.error(`未知的 runtime: "${options.runtime}"。已配置的 runtime: ${runtimes.map(r => r.name).join(', ')}`);
+      display.error(`Unknown runtime: "${options.runtime}". Configured: ${runtimes.map(r => r.name).join(', ')}`);
       return;
     }
     const ok = linkSkillToRuntime(skillName, rt.name, rt.path);
@@ -129,5 +129,5 @@ export function runLink(skillName: string | undefined, options: LinkOptions): vo
     return;
   }
 
-  display.error('请指定 --runtime <runtime> 或者 --all 选项以指明链接目标。');
+  display.error('Please specify --runtime <runtime> or --all to indicate the link target.');
 }
