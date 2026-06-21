@@ -1,17 +1,18 @@
+<div align="center">
+
 # SkillFS
 
-<p align="center">
-  <b>所有 AI Agent Skill 的单一真相源。</b><br>
-  别再复制粘贴了，用软链接。
-</p>
+### 所有 AI Agent Skill 的单一真相源
 
-<p align="center">
-  <a href="#快速开始"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/license-ISC-blue" alt="License">
-  <a href="https://github.com/ares0x/skillfs/actions/workflows/ci.yml"><img src="https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="README.md">English</a>
-</p>
+[![npm version](https://img.shields.io/npm/v/skillfs?color=blue)](https://www.npmjs.com/package/skillfs)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![Tests](https://img.shields.io/badge/tests-127%20passed-brightgreen)](#)
+[![CI](https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg)](https://github.com/ares0x/skillfs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-ISC-blue)](#)
+
+[English](README.md) | 中文文档
+
+</div>
 
 ---
 

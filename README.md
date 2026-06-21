@@ -1,17 +1,18 @@
+<div align="center">
+
 # SkillFS
 
-<p align="center">
-  <b>One source of truth for all your AI agent skills.</b><br>
-  Stop copying. Start linking.
-</p>
+### One source of truth for all your AI agent skills
 
-<p align="center">
-  <a href="#quick-start"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/license-ISC-blue" alt="License">
-  <a href="https://github.com/ares0x/skillfs/actions/workflows/ci.yml"><img src="https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="README_CN.md">中文文档</a>
-</p>
+[![npm version](https://img.shields.io/npm/v/skillfs?color=blue)](https://www.npmjs.com/package/skillfs)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![Tests](https://img.shields.io/badge/tests-127%20passed-brightgreen)](#)
+[![CI](https://github.com/ares0x/skillfs/actions/workflows/ci.yml/badge.svg)](https://github.com/ares0x/skillfs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-ISC-blue)](#)
+
+English | [中文文档](README_CN.md)
+
+</div>
 
 ---
 
