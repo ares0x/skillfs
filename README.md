@@ -336,7 +336,7 @@ After global install, all commands are available as `sk <command>` anywhere.
 ### From GitHub
 
 ```bash
-git clone https://github.com/jacejia/skillfs.git
+git clone https://github.com/ares0x/skillfs.git
 cd skillfs
 pnpm install
 pnpm run build
