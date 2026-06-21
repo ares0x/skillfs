@@ -1,14 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { scanAll, RuntimeScanStatus, ScanResult } from '../core/scanner.js';
+import { scanAll, ScanResult } from '../core/scanner.js';
 import { Skill } from '../core/skill.js';
 import { display, formatPath } from '../utils/display.js';
 import { getIncompleteTransactions } from './dedupe.js';
+import { loadRegistry } from '../core/registry.js';
 
 export interface DuplicateGroup {
   name: string;
   identical: boolean;
   skills: Skill[];
+}
+
+export interface DriftedSkill {
+  name: string;
+  registeredHash: string;
+  currentHash: string;
 }
 
 export interface DoctorAnalysis {
@@ -17,6 +24,8 @@ export interface DoctorAnalysis {
   totalDuplicatesCount: number;
   conflictsCount: number;
   savingsBytes: number;
+  /** Skills whose current SKILL.md hash differs from the registry contentHash */
+  driftedSkills: DriftedSkill[];
 }
 
 /**
@@ -125,12 +134,30 @@ export function analyzeRuntimes(): DoctorAnalysis {
     }
   }
 
+  // Drift detection: compare current SKILL.md hashes with registry contentHash
+  const registry = loadRegistry();
+  const driftedSkills: DriftedSkill[] = [];
+
+  for (const centralSkill of scanResult.central.skills) {
+    const regEntry = registry.skills[centralSkill.name];
+    if (regEntry && regEntry.contentHash && centralSkill.hash) {
+      if (regEntry.contentHash !== centralSkill.hash) {
+        driftedSkills.push({
+          name: centralSkill.name,
+          registeredHash: regEntry.contentHash,
+          currentHash: centralSkill.hash
+        });
+      }
+    }
+  }
+
   return {
     scanResult,
     duplicates,
     totalDuplicatesCount,
     conflictsCount,
-    savingsBytes
+    savingsBytes,
+    driftedSkills
   };
 }
 
@@ -139,7 +166,7 @@ export function analyzeRuntimes(): DoctorAnalysis {
  * formatting all paths for display.
  */
 export function serializeAnalysisToJson(analysis: DoctorAnalysis): object {
-  const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes } = analysis;
+  const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes, driftedSkills } = analysis;
 
   const runtimes = scanResult.runtimes.map(r => ({
     name: r.name,
@@ -169,6 +196,12 @@ export function serializeAnalysisToJson(analysis: DoctorAnalysis): object {
     dest: formatPath(t.dest),
   }));
 
+  const driftedJson = driftedSkills.map(d => ({
+    name: d.name,
+    registeredHash: d.registeredHash,
+    currentHash: d.currentHash,
+  }));
+
   return {
     runtimes,
     central,
@@ -177,17 +210,44 @@ export function serializeAnalysisToJson(analysis: DoctorAnalysis): object {
     conflictsCount,
     savingsBytes,
     incompleteTransactions,
+    driftedSkills: driftedJson,
   };
 }
 
 export interface DoctorOptions {
   json?: boolean;
+  snapshot?: boolean;
+}
+
+/**
+ * Outputs a reproducible snapshot (lockfile-style JSON) of all central skills.
+ */
+function outputSnapshot(): void {
+  const scanResult = scanAll();
+  const registry = loadRegistry();
+
+  const skills: Record<string, { hash: string; runtimes: string[] }> = {};
+
+  for (const skill of scanResult.central.skills) {
+    const regEntry = registry.skills[skill.name];
+    skills[skill.name] = {
+      hash: skill.hash,
+      runtimes: regEntry ? [...regEntry.runtimes] : []
+    };
+  }
+
+  console.log(JSON.stringify({ skills }, null, 2));
 }
 
 /**
  * Executes the sk doctor command and outputs the analysis report.
  */
 export function runDoctor(options: DoctorOptions = {}): void {
+  if (options.snapshot) {
+    outputSnapshot();
+    return;
+  }
+
   if (options.json) {
     const analysis = analyzeRuntimes();
     const json = serializeAnalysisToJson(analysis);
@@ -198,7 +258,7 @@ export function runDoctor(options: DoctorOptions = {}): void {
   display.header('SkillFS Doctor 🔍');
   
   const analysis = analyzeRuntimes();
-  const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes } = analysis;
+  const { scanResult, duplicates, totalDuplicatesCount, conflictsCount, savingsBytes, driftedSkills } = analysis;
 
   console.log('扫描目录：');
   for (const runtime of scanResult.runtimes) {
@@ -219,39 +279,38 @@ export function runDoctor(options: DoctorOptions = {}): void {
 
   console.log('');
 
-  if (duplicates.length === 0) {
-    console.log(display.green('  ✓ 未发现重复 Skill，一切正常！'));
-    return;
-  }
+  if (duplicates.length > 0) {
+    console.log('发现重复 Skill：\n');
 
-  console.log('发现重复 Skill：\n');
+    for (const group of duplicates) {
+      const statusLabel = group.identical 
+        ? display.green('[内容相同 ✓]') 
+        : display.yellow('[内容不同 ⚠]');
 
-  for (const group of duplicates) {
-    const statusLabel = group.identical 
-      ? display.green('[内容相同 ✓]') 
-      : display.yellow('[内容不同 ⚠]');
+      console.log(`  ${display.bold(group.name)}${' '.repeat(Math.max(1, 14 - group.name.length))}× ${group.skills.length}  ${statusLabel}`);
+      
+      // Sort skills so newer ones are presented first or consistently
+      const sortedSkills = [...group.skills].sort((a, b) => {
+        return getSkillMtime(b.path).getTime() - getSkillMtime(a.path).getTime();
+      });
 
-    console.log(`  ${display.bold(group.name)}${' '.repeat(Math.max(1, 14 - group.name.length))}× ${group.skills.length}  ${statusLabel}`);
-    
-    // Sort skills so newer ones are presented first or consistently
-    const sortedSkills = [...group.skills].sort((a, b) => {
-      return getSkillMtime(b.path).getTime() - getSkillMtime(a.path).getTime();
-    });
+      for (let i = 0; i < sortedSkills.length; i++) {
+        const skill = sortedSkills[i];
+        const formattedSkillPath = formatPath(skill.path);
+        const mtime = getSkillMtime(skill.path);
+        const mtimeStr = formatDate(mtime);
 
-    for (let i = 0; i < sortedSkills.length; i++) {
-      const skill = sortedSkills[i];
-      const formattedSkillPath = formatPath(skill.path);
-      const mtime = getSkillMtime(skill.path);
-      const mtimeStr = formatDate(mtime);
-
-      if (group.identical) {
-        display.dim(`${formattedSkillPath}`);
-      } else {
-        const ageLabel = i === 0 ? '较新' : '较旧';
-        display.dim(`${formattedSkillPath}   (${ageLabel}，修改于 ${mtimeStr})`);
+        if (group.identical) {
+          display.dim(`${formattedSkillPath}`);
+        } else {
+          const ageLabel = i === 0 ? '较新' : '较旧';
+          display.dim(`${formattedSkillPath}   (${ageLabel}，修改于 ${mtimeStr})`);
+        }
       }
+      console.log('');
     }
-    console.log('');
+  } else {
+    console.log(display.green('  ✓ 未发现重复 Skill。'));
   }
 
   // Check for incomplete transactions from interrupted dedupe runs
@@ -268,10 +327,25 @@ export function runDoctor(options: DoctorOptions = {}): void {
     console.log('');
   }
 
+  // Drift detection: report skills whose content differs from registry
+  if (driftedSkills.length > 0) {
+    console.log('');
+    display.header('⚠ 内容漂移检测 (SKILL.md 与 registry 记录不一致):');
+    for (const d of driftedSkills) {
+      display.warn(`${d.name}: 内容与 registry 记录不一致（可能已被手动修改）`);
+      display.dim(`  Registry hash: ${d.registeredHash.slice(0, 8)}...`);
+      display.dim(`  当前 hash:     ${d.currentHash.slice(0, 8)}...`);
+    }
+    console.log('');
+  }
+
   console.log('汇总：');
   console.log(`  重复 Skill：${duplicates.length} 个（共 ${totalDuplicatesCount} 个副本）`);
   console.log(`  内容冲突：${conflictsCount} 个${conflictsCount > 0 ? display.yellow('（需手动确认）') : ''}`);
   console.log(`  可节省空间：约 ${formatBytes(savingsBytes)}`);
+  if (driftedSkills.length > 0) {
+    console.log(`  内容漂移：${driftedSkills.length} 个`);
+  }
   console.log('');
   console.log(`运行 ${display.bold('sk dedupe')} 开始迁移\n`);
 }

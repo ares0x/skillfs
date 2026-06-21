@@ -3,11 +3,14 @@ import * as path from 'path';
 import { getCentralSkillsPath } from './config.js';
 import { ensureDirExists, resolveHomePath } from '../utils/fs.js';
 import { acquireLock } from '../utils/lock.js';
+import { hashFile } from './skill.js';
 
 export interface RegistrySkillEntry {
   installedAt: string;
   source: string;
   runtimes: string[];
+  /** MD5 hash of SKILL.md at registration time. Used for drift detection. */
+  contentHash?: string;
 }
 
 export interface RegistrySchema {
@@ -91,20 +94,32 @@ export function registerSkillRuntime(name: string, runtime: string): void {
   const release = lockRegistry();
   try {
     const registry = loadRegistry();
-    
+
     if (!registry.skills[name]) {
+      // Compute the content hash of the central SKILL.md
+      const skillMdPath = path.join(getCentralSkillsPath(), name, 'SKILL.md');
+      const hash = hashFile(skillMdPath);
+
       registry.skills[name] = {
         installedAt: new Date().toISOString(),
         source: 'local',
-        runtimes: []
+        runtimes: [],
+        contentHash: hash || undefined
       };
+    } else {
+      // Refresh contentHash for existing entries when SKILL.md is available
+      const skillMdPath = path.join(getCentralSkillsPath(), name, 'SKILL.md');
+      const hash = hashFile(skillMdPath);
+      if (hash) {
+        registry.skills[name].contentHash = hash;
+      }
     }
-    
+
     const entry = registry.skills[name];
     if (!entry.runtimes.includes(runtime)) {
       entry.runtimes.push(runtime);
     }
-    
+
     saveRegistry(registry);
   } finally {
     release();
@@ -143,11 +158,23 @@ export function syncSkillRuntimes(name: string, runtimes: string[]): void {
     const registry = loadRegistry();
 
     if (!registry.skills[name]) {
+      // Compute the content hash of the central SKILL.md
+      const skillMdPath = path.join(getCentralSkillsPath(), name, 'SKILL.md');
+      const hash = hashFile(skillMdPath);
+
       registry.skills[name] = {
         installedAt: new Date().toISOString(),
         source: 'local',
-        runtimes: []
+        runtimes: [],
+        contentHash: hash || undefined
       };
+    } else {
+      // Refresh contentHash for existing entries when SKILL.md is available
+      const skillMdPath = path.join(getCentralSkillsPath(), name, 'SKILL.md');
+      const hash = hashFile(skillMdPath);
+      if (hash) {
+        registry.skills[name].contentHash = hash;
+      }
     }
 
     registry.skills[name].runtimes = [...new Set(runtimes)];
@@ -166,14 +193,27 @@ export function batchRegisterSkillRuntimes(entries: Array<{name: string, runtime
   const release = lockRegistry();
   try {
     const registry = loadRegistry();
+    const centralPath = getCentralSkillsPath();
 
     for (const {name, runtime} of entries) {
       if (!registry.skills[name]) {
+        // Compute the content hash of the central SKILL.md
+        const skillMdPath = path.join(centralPath, name, 'SKILL.md');
+        const hash = hashFile(skillMdPath);
+
         registry.skills[name] = {
           installedAt: new Date().toISOString(),
           source: 'local',
-          runtimes: []
+          runtimes: [],
+          contentHash: hash || undefined
         };
+      } else {
+        // Refresh contentHash for existing entries when SKILL.md is available
+        const skillMdPath = path.join(centralPath, name, 'SKILL.md');
+        const hash = hashFile(skillMdPath);
+        if (hash) {
+          registry.skills[name].contentHash = hash;
+        }
       }
 
       const entry = registry.skills[name];

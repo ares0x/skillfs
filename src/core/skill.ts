@@ -4,6 +4,19 @@ import * as os from 'os';
 import { createHash } from 'crypto';
 import { isSymlink, getSymlinkTarget, resolveHomePath, validatePathInScope } from '../utils/fs.js';
 
+/**
+ * Computes the MD5 hash of a file's contents.
+ * Returns empty string if the file cannot be read.
+ */
+export function hashFile(filePath: string): string {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return createHash('md5').update(content).digest('hex');
+  } catch {
+    return '';
+  }
+}
+
 export interface Skill {
   name: string;          // Directory name, e.g. "pdf"
   path: string;          // Absolute path

@@ -21,9 +21,10 @@ program
   .command('doctor')
   .description('扫描并发现所有运行时的重复 Skill 和潜在节省空间')
   .option('--json', '以 JSON 格式输出分析结果')
+  .option('--snapshot', '输出可重现的快照 (lockfile-style JSON)')
   .action((options) => {
     try {
-      runDoctor({ json: options.json === true });
+      runDoctor({ json: options.json === true, snapshot: options.snapshot === true });
     } catch (err: any) {
       display.error(`doctor 命令执行失败: ${err.message}`);
       display.info('运行 sk doctor --help 查看帮助信息。');
