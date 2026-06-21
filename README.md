@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-110%20passed-brightgreen" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-ISC-blue" alt="License"></a>
   <a href="README_CN.md">中文文档</a>
 </p>
@@ -52,6 +52,8 @@ That's it. Your agents won't notice the difference — they follow symlinks tran
 sk doctor          Scan all runtimes, find duplicates, estimate savings
 sk dedupe          Migrate duplicates to ~/.skills/, replace with symlinks
 sk dedupe --dry-run   Preview without touching anything
+sk install <path>  Install a skill to ~/.skills/ and link to runtimes
+sk uninstall <name>   Remove a skill from ~/.skills/ and clean up symlinks
 sk link --all      Link all ~/.skills/ back to every runtime
 sk list            Visual tree of every skill and its link status
 ```
@@ -140,6 +142,30 @@ $ sk list
 图例: ✓ 已链接  - 未链接  ⚠ 链接断裂
 ```
 
+### `sk install`
+
+Copy a skill directory to `~/.skills/` and create symlinks to runtimes:
+
+```bash
+sk install ~/projects/my-skill           # Install and link to all runtimes
+sk install ~/projects/my-skill -r claude # Install and link to one runtime
+sk install --all-from claude             # Batch-install all unique skills from one runtime
+sk install --all-from claude --dry-run   # Preview before batch-installing
+```
+
+The source must be a directory containing a `SKILL.md` file. SkillFS extracts the directory name as the skill name, copies everything to `~/.skills/<name>/`, and optionally creates symlinks in each runtime's skills directory.
+
+### `sk uninstall`
+
+Remove a skill from `~/.skills/` and clean up symlinks:
+
+```bash
+sk uninstall my-skill           # Remove from ~/.skills/ and all runtimes
+sk uninstall my-skill -r claude # Remove from one runtime only, keep ~/.skills/
+```
+
+When removing from all runtimes (no `--runtime` flag), every symlink pointing to `~/.skills/<name>` is removed, the central copy is deleted, and the registry entry is cleared. With `--runtime`, only the specified runtime's symlink is removed.
+
 ---
 
 ## CLI Reference
@@ -201,6 +227,40 @@ sk list
 
 No options. Shows `✓` (linked), `-` (not linked), `⚠` (broken link) per runtime.
 
+### `sk install`
+
+Install skill(s) to `~/.skills/` and link to runtimes.
+
+```bash
+sk install <path>                     # Install one skill, link to all runtimes
+sk install <path> --runtime <name>    # Install one skill, link to one runtime
+sk install --all-from <runtime>       # Batch-install all unique skills from a runtime
+sk install --all-from claude --dry-run # Preview batch install, no changes
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--runtime <name>` | `-r` | Target runtime. If omitted, links to all configured runtimes. |
+| `--all-from <name>` | — | Scan a runtime's skills dir and install every non-symlink skill not yet in `~/.skills/` |
+| `--dry-run` | — | Preview only — no files are modified |
+
+For single-skill install, `<path>` must be a directory containing a `SKILL.md` file. For batch install with `--all-from`, no `<path>` is needed — the runtime's skills directory is scanned automatically.
+
+### `sk uninstall`
+
+Remove a skill from `~/.skills/` and clean up symlinks.
+
+```bash
+sk uninstall <name> --runtime <name>  # Remove from one runtime only
+sk uninstall <name>                   # Remove from all runtimes and ~/.skills/
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--runtime <name>` | `-r` | Only remove symlink from the specified runtime. Keeps the skill in `~/.skills/`. Without this flag, removes everything: symlinks, central copy, and registry entry. |
+
+Only removes symlinks that actually point to `~/.skills/<name>`. Symlinks pointing elsewhere are left untouched.
+
 ---
 
 ## Safety & Security
@@ -215,7 +275,7 @@ SkillFS modifies your filesystem. We take that seriously.
 | **Path traversal guard** | All paths are validated — `config.json` can't trick the scanner into reading `/etc` |
 | **Symlink target validation** | Symlinks pointing outside your home directory are detected and rejected |
 | **Incomplete transaction detection** | `sk doctor` flags interrupted `dedupe` runs and shows recovery steps |
-| **110 tests** | Full coverage of filesystem operations, scanner, registry, lock, and security edge cases |
+| **127 tests** | Full coverage of filesystem operations, scanner, registry, lock, and security edge cases |
 
 ---
 
@@ -328,7 +388,7 @@ If you only use one agent — you probably don't need this. If you use three and
 Bug reports and PRs welcome. Run tests before submitting:
 
 ```bash
-pnpm test          # 110 tests, must all pass
+pnpm test          # 127 tests, must all pass
 pnpm run build     # TypeScript compilation, must succeed
 ```
 

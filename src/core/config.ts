@@ -30,6 +30,7 @@ export const DEFAULT_RUNTIMES: RuntimeConfig[] = [
   { name: 'augment',   path: '~/.augment/skills' },      // Augment Code
   { name: 'roo',       path: '~/.roo/skills' },          // Roo Code
   { name: 'opencode',  path: '~/.opencode/skills' },
+  { name: 'trae',      path: '~/.trae/skills' },         // TRAE IDE
 ];
 
 export const CENTRAL_SKILLS_DIR = '~/.skills';

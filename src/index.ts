@@ -5,6 +5,8 @@ import { runDoctor } from './commands/doctor.js';
 import { runDedupe } from './commands/dedupe.js';
 import { runLink } from './commands/link.js';
 import { runList } from './commands/list.js';
+import { runInstall, runInstallAllFromRuntime } from './commands/install.js';
+import { runUninstall } from './commands/uninstall.js';
 import { display } from './utils/display.js';
 
 const program = new Command();
@@ -66,6 +68,52 @@ program
     } catch (err: any) {
       display.error(`list 命令执行失败: ${err.message}`);
       display.info('运行 sk list --help 查看帮助信息。');
+      process.exit(1);
+    }
+  });
+
+program
+  .command('install')
+  .argument('[path]', 'Path to skill directory to install (omit when using --all-from)')
+  .option('-r, --runtime <runtime>', 'Target runtime (e.g. claude, cursor)')
+  .option('--all-from <runtime>', 'Batch-install all non-symlink skills from a runtime directory')
+  .option('--dry-run', 'Preview only — no files are modified')
+  .description('Install skill(s) to ~/.skills/ and link to runtimes')
+  .action(async (sourcePath, options) => {
+    try {
+      if (options.allFrom) {
+        await runInstallAllFromRuntime(options.allFrom, {
+          runtime: options.runtime,
+          dryRun: options.dryRun === true,
+        });
+      } else if (sourcePath) {
+        await runInstall(sourcePath, {
+          runtime: options.runtime,
+          dryRun: options.dryRun === true,
+        });
+      } else {
+        display.error('请提供 skill 目录路径，或使用 --all-from <runtime> 批量安装。');
+        display.info('示例: sk install ~/my-skill  或  sk install --all-from claude');
+        process.exit(1);
+      }
+    } catch (err: any) {
+      display.error(`install 命令执行失败: ${err.message}`);
+      display.info('使用 sk install --help 查看用法。');
+      process.exit(1);
+    }
+  });
+
+program
+  .command('uninstall')
+  .argument('<name>', 'Skill name to uninstall')
+  .option('-r, --runtime <runtime>', 'Only remove from specific runtime')
+  .description('Remove a skill from ~/.skills/ and clean up symlinks')
+  .action(async (name, options) => {
+    try {
+      await runUninstall(name, { runtime: options.runtime });
+    } catch (err: any) {
+      display.error(`uninstall 命令执行失败: ${err.message}`);
+      display.info('使用 sk uninstall --help 查看用法。');
       process.exit(1);
     }
   });

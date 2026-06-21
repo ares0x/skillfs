@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="#快速开始"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-110%20passed-brightgreen" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-127%20passed-brightgreen" alt="Tests"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-ISC-blue" alt="License"></a>
   <a href="README.md">English</a>
 </p>
@@ -52,6 +52,8 @@ sk dedupe
 sk doctor          扫描所有运行时，发现重复，估算可节省空间
 sk dedupe          把重复 skill 迁移到 ~/.skills/，原位置替换为软链接
 sk dedupe --dry-run   仅预览，不实际修改任何文件
+sk install <path>  安装 skill 到 ~/.skills/ 并链接到运行时
+sk uninstall <name>   从 ~/.skills/ 移除 skill 并清理软链接
 sk link --all      把 ~/.skills/ 里所有 skill 链接回每个运行时
 sk list            可视化树展示每个 skill 在各运行时的链接状态
 ```
@@ -140,6 +142,30 @@ $ sk list
 图例: ✓ 已链接  - 未链接  ⚠ 链接断裂
 ```
 
+### `sk install`
+
+复制 skill 目录到 `~/.skills/` 并创建运行时软链接：
+
+```bash
+sk install ~/projects/my-skill           # 安装并链接到所有运行时
+sk install ~/projects/my-skill -r claude # 安装并链接到指定运行时
+sk install --all-from claude             # 批量安装某个运行时下所有独有 skill
+sk install --all-from claude --dry-run   # 先预览，不实际修改
+```
+
+源目录必须包含 `SKILL.md` 文件。SkillFS 提取目录名作为 skill 名称，将所有内容复制到 `~/.skills/<name>/`，并可选择在每个运行时的 skills 目录中创建软链接。
+
+### `sk uninstall`
+
+从 `~/.skills/` 移除 skill 并清理软链接：
+
+```bash
+sk uninstall my-skill           # 从 ~/.skills/ 和所有运行时中移除
+sk uninstall my-skill -r claude # 仅从一个运行时移除，保留 ~/.skills/ 中的副本
+```
+
+不加 `--runtime` 时，所有指向 `~/.skills/<name>` 的软链接都会被删除，中央副本被移除，registry 记录被清除。加 `--runtime` 时仅移除指定运行时的软链接。
+
 ---
 
 ## CLI 命令参考
@@ -201,6 +227,40 @@ sk list
 
 无选项。按运行时显示 `✓`（已链接）、`-`（未链接）、`⚠`（链接断裂）。
 
+### `sk install`
+
+安装 skill 到 `~/.skills/` 并链接到运行时。
+
+```bash
+sk install <path>                     # 安装单个 skill，链接到所有运行时
+sk install <path> --runtime <name>    # 安装单个 skill，链接到指定运行时
+sk install --all-from <runtime>       # 批量安装某个运行时下所有独有 skill
+sk install --all-from claude --dry-run # 先预览，不实际修改
+```
+
+| 选项 | 别名 | 说明 |
+|------|------|------|
+| `--runtime <name>` | `-r` | 目标运行时。省略则链接到所有已配置的运行时。 |
+| `--all-from <name>` | — | 扫描指定运行时的 skills 目录，批量安装所有不在 `~/.skills/` 中的非软链接 skill |
+| `--dry-run` | — | 仅预览，不实际修改文件 |
+
+单个安装时 `<path>` 必须是包含 `SKILL.md` 文件的目录。批量安装时无需提供路径——运行时的 skills 目录会被自动扫描。
+
+### `sk uninstall`
+
+从 `~/.skills/` 移除 skill 并清理软链接。
+
+```bash
+sk uninstall <name> --runtime <name>  # 仅从一个运行时移除
+sk uninstall <name>                   # 从所有运行时和 ~/.skills/ 中移除
+```
+
+| 选项 | 别名 | 说明 |
+|------|------|------|
+| `--runtime <name>` | `-r` | 仅移除指定运行时的软链接，保留 `~/.skills/` 中的副本。不加此选项时，移除所有内容：软链接、中央副本和 registry 记录。 |
+
+仅移除实际指向 `~/.skills/<name>` 的软链接，指向其他位置的软链接不会被删除。
+
 ---
 
 ## 安全与防护
@@ -215,7 +275,7 @@ SkillFS 会修改你的文件系统。我们对此非常认真。
 | **路径穿越防护** | 所有路径都经过校验——`config.json` 里写 `../../../etc` 会被拦截 |
 | **软链接目标校验** | 指向 home 目录以外的软链接会被检测并拒绝 |
 | **中断事务检测** | `sk doctor` 能发现被中断的 `dedupe` 操作并给出恢复建议 |
-| **110 个测试** | 覆盖文件系统操作、扫描器、registry、锁、以及安全边界场景 |
+| **127 个测试** | 覆盖文件系统操作、扫描器、registry、锁、以及安全边界场景 |
 
 ---
 
@@ -328,7 +388,7 @@ src/
 欢迎提交 Bug 报告和 PR。提交前请运行测试：
 
 ```bash
-pnpm test          # 110 个测试，必须全部通过
+pnpm test          # 127 个测试，必须全部通过
 pnpm run build     # TypeScript 编译，必须成功
 ```
 

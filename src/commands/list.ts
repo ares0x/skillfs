@@ -91,7 +91,7 @@ export function runList(): void {
       for (let index = 0; index < unmigrated.length; index++) {
         const skill = unmigrated[index];
         const prefix = index === unmigrated.length - 1 ? '└──' : '├──';
-        console.log(`  ${prefix} ${display.yellow(skill.name.padEnd(16))} (未在 ~/.skills 中，运行 sk dedupe 迁移)`);
+        console.log(`  ${prefix} ${display.yellow(skill.name.padEnd(16))} (未在 ~/.skills 中)`);
       }
       console.log('');
     }
@@ -99,6 +99,9 @@ export function runList(): void {
 
   if (!hasUnmigrated) {
     display.success('所有运行时的 Skill 均已同步，无额外未迁移的 Skill。\n');
+  } else {
+    console.log(`提示: 对已在 ~/.skills/ 中的 skill，使用 ${display.bold('sk link <name> --runtime <name>')} 将其链接到指定 agent。\n`);
+    console.log(`      对未在 ~/.skills/ 中的独立 skill，使用 ${display.bold('sk install --all-from claude')} 批量安装。\n`);
   }
 
   // 3. Legend
